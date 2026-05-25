@@ -1,0 +1,32 @@
+# Deltas over the arem-photo-ai conda env (which already has
+# torch 2.10.0+cu126, torchvision, numpy, opencv-python-headless, Pillow).
+# Install with:
+#   conda activate arem-photo-ai
+#   pip install -r requirements.txt
+
+# Inference service
+fastapi>=0.115
+uvicorn[standard]>=0.32
+pydantic>=2.9
+
+# Object detection (dead-fixture)
+ultralytics>=8.3
+
+# Segmentation (reflection)
+# MobileSAM is a tiny SAM variant — same API as segment_anything but ~10x faster.
+# Install from upstream pip; falls back to the official repo if pip drops it.
+mobile-sam>=1.0 ; python_version < "3.12"
+segment-anything>=1.0
+
+# Database access for training-data export scripts
+psycopg[binary]>=3.2
+
+# R2 (S3-compatible)
+boto3>=1.35
+
+# Eval / metrics
+scikit-learn>=1.5
+
+# Dev / CLI ergonomics
+typer>=0.12
+rich>=13.9

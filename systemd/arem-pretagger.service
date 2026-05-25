@@ -1,0 +1,33 @@
+# systemd unit for the arem-pretagger inference HTTP service.
+#
+# Install:
+#   sudo install -m 0640 -o jordan -g jordan \
+#        /tmp/arem-pretagger.env /etc/arem-pretagger.env
+#   sudo cp systemd/arem-pretagger.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now arem-pretagger.service
+#
+# View logs: journalctl -u arem-pretagger -f
+# Restart:   sudo systemctl restart arem-pretagger
+
+[Unit]
+Description=AREM pre-tagger inference service (FastAPI on the 3090)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=-/etc/arem-pretagger.env
+Type=simple
+User=jordan
+Group=jordan
+WorkingDirectory=/home/jordan/arem-pretagger
+ExecStart=/bin/bash /home/jordan/arem-pretagger/run_serve.sh
+Restart=on-failure
+RestartSec=10
+KillMode=mixed
+TimeoutStopSec=60
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

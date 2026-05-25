@@ -1,0 +1,24 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local model cache (pulled from R2 by sync_checkpoints.sh)
+checkpoints/
+models/
+
+# Local training data exports (DB → disk)
+data/
+exports/
+
+# Local env files (real secrets live at /etc/arem-pretagger.env on the box)
+.env
+.env.local
+*.env.local
+
+# Editor noise
+.DS_Store
+.vscode/
+.idea/
