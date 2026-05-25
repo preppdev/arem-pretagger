@@ -1,0 +1,21 @@
+# systemd unit that runs the weekly pre-tagger retraining cycle. Paired
+# with arem-pretagger-retrain.timer. Idempotent — if no condition has
+# enough new labels, it logs and exits 0.
+
+[Unit]
+Description=AREM pre-tagger weekly retraining cycle
+After=network-online.target arem-pretagger.service
+Wants=network-online.target
+
+[Service]
+EnvironmentFile=-/etc/arem-pretagger.env
+Type=oneshot
+User=jordan
+Group=jordan
+WorkingDirectory=/home/jordan/arem-pretagger
+ExecStart=/bin/bash /home/jordan/arem-pretagger/scripts/retrain_all.sh
+# Allow up to 2 hours; reflection fine-tune alone can take 20+ min,
+# and we run all conditions sequentially.
+TimeoutStartSec=7200
+StandardOutput=journal
+StandardError=journal

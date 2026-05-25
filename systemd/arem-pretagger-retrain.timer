@@ -1,0 +1,14 @@
+# Weekly retraining trigger. Picks Sunday 03:00 local — the editing
+# pipeline is quiet on Sunday mornings, so a long training job
+# competing for the 3090 doesn't slow live editing jobs.
+
+[Unit]
+Description=Trigger weekly pre-tagger retraining
+
+[Timer]
+OnCalendar=Sun *-*-* 03:00:00
+Persistent=true
+Unit=arem-pretagger-retrain.service
+
+[Install]
+WantedBy=timers.target

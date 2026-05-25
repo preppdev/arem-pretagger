@@ -41,10 +41,16 @@ EOF
   exit 2
 fi
 
-echo "[provision] installing systemd unit…"
-sudo cp "$REPO_DIR/systemd/arem-pretagger.service" /etc/systemd/system/arem-pretagger.service
+echo "[provision] installing systemd units…"
+sudo cp "$REPO_DIR/systemd/arem-pretagger.service"          /etc/systemd/system/arem-pretagger.service
+sudo cp "$REPO_DIR/systemd/arem-pretagger-retrain.service"  /etc/systemd/system/arem-pretagger-retrain.service
+sudo cp "$REPO_DIR/systemd/arem-pretagger-retrain.timer"    /etc/systemd/system/arem-pretagger-retrain.timer
 sudo systemctl daemon-reload
 sudo systemctl enable --now arem-pretagger.service
+sudo systemctl enable --now arem-pretagger-retrain.timer
+
+echo "[provision] syncing model checkpoints from R2…"
+bash "$REPO_DIR/scripts/sync_checkpoints.sh" || echo "  (no active bundles yet — service will report empty conditions until first promotion)"
 
 echo "[provision] done. Checking service status:"
 sleep 2
