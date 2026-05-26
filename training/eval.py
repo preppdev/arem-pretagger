@@ -30,9 +30,17 @@ from rich.console import Console
 console = Console()
 
 PROMOTION_BAR = {
-    "reflection":   {"key": "iou",   "min": 0.65},
-    "dead-fixture": {"key": "mAP50", "min": 0.65},
-    "classifier":   {"key": "f1",    "min": 0.85},  # generic small CNNs
+    # Per (condition, model_type) — most-specific wins. The bar is the
+    # metric the model_type actually produces ("iou" requires a
+    # segmenter; classifiers can't pay that gate).
+    ("reflection",   "classifier"):   {"key": "f1",    "min": 0.70},
+    ("reflection",   "mobile-sam"):   {"key": "iou",   "min": 0.65},
+    ("dead-fixture", "classifier"):   {"key": "f1",    "min": 0.75},
+    ("dead-fixture", "yolo-detect"):  {"key": "mAP50", "min": 0.65},
+    # Bars for "this is the v1 model" are intentionally lower than what
+    # we'd want long-term — they exist to gate against regression and
+    # obvious data bugs, not to chase SOTA. Raise as the data + model
+    # improve.
 }
 
 
@@ -52,9 +60,9 @@ def main() -> int:
     manifest = json.loads(manifest_path.read_text())
     condition = manifest["condition"]
     model_type = manifest["model_type"]
-    bar = PROMOTION_BAR.get(condition) or PROMOTION_BAR.get(model_type)
+    bar = PROMOTION_BAR.get((condition, model_type))
     if not bar:
-        console.print(f"[yellow]no promotion bar configured for {condition}/{model_type}[/]")
+        console.print(f"[yellow]no promotion bar configured for ({condition}, {model_type})[/]")
         return 1
 
     # Real eval = re-run inference on a held-out split and compute
