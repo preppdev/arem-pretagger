@@ -143,8 +143,26 @@ def _load_yolo(weights_path: Path) -> Any:
 
 
 def _load_classifier(weights_path: Path) -> Any:
-    # TODO: torch.load(weights_path, map_location="cuda")
-    return {"weights": str(weights_path), "stub": True}
+    """Load a binary classifier (currently always ResNet-18 + 2-layer
+    head per train_reflection.py). When we add more classifier archs
+    later, branch on manifest.hyperparameters.backbone."""
+    import torch
+    import torch.nn as nn
+    from torchvision.models import resnet18
+
+    backbone = resnet18(weights=None)  # no pretrained DL; state_dict will overwrite
+    in_features = backbone.fc.in_features
+    backbone.fc = nn.Sequential(
+        nn.Linear(in_features, 128),
+        nn.ReLU(inplace=True),
+        nn.Dropout(0.3),
+        nn.Linear(128, 1),
+    )
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    state = torch.load(weights_path, map_location=device, weights_only=True)
+    backbone.load_state_dict(state)
+    backbone.to(device).eval()
+    return {"model": backbone, "device": device, "stub": False}
 
 
 def _infer_mobile_sam(model: Any, image_bytes: bytes, threshold: float) -> dict[str, Any]:
@@ -160,5 +178,26 @@ def _infer_yolo(model: Any, image_bytes: bytes, threshold: float) -> dict[str, A
 
 
 def _infer_classifier(model: Any, image_bytes: bytes, threshold: float) -> dict[str, Any]:
-    # TODO: small CNN binary classifier; sigmoid → confidence.
-    return {"confidence": 0.0, "stub": True}
+    """Run the binary classifier on the image bytes. Returns
+    {confidence: float in [0,1]}. Same preprocessing as
+    train_reflection.py's val transform — must stay in sync."""
+    import io
+    import torch
+    from PIL import Image
+    from torchvision import transforms
+
+    if model.get("stub"):
+        return {"confidence": 0.0, "stub": True}
+
+    img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    tx = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    t = tx(img).unsqueeze(0).to(model["device"], non_blocking=True)
+    with torch.no_grad():
+        logit = model["model"](t).squeeze()
+        confidence = torch.sigmoid(logit).item()
+    return {"confidence": float(confidence)}
