@@ -13,9 +13,13 @@ pydantic>=2.9
 ultralytics>=8.3
 
 # Segmentation (reflection)
-# MobileSAM is a tiny SAM variant — same API as segment_anything but ~10x faster.
-# Install from upstream pip; falls back to the official repo if pip drops it.
-mobile-sam>=1.0 ; python_version < "3.12"
+# Plain segment-anything is on PyPI. MobileSAM is a tiny SAM variant
+# (~10x faster) but isn't published to PyPI — install it from the
+# upstream repo *only when training* the reflection segmenter:
+#   pip install git+https://github.com/ChaoningZhang/MobileSAM.git
+# (Requires git on the box; on a vanilla Ubuntu install you may need
+# `sudo apt install git` first.) Until that train step, the registry
+# stub for "mobile-sam" model_type returns zero-confidence — fine.
 segment-anything>=1.0
 
 # Database access for training-data export scripts
